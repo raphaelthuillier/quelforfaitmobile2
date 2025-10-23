@@ -1,1 +1,47 @@
 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quel Forfait Mobile</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-box">
+      <a href="#" class="header-logo">
+        <img src="https://i.imgur.com/JT29hK7.png" class="logo-img" alt="QuelForfaitMobile" />
+        <span class="logo-text">QuelForfaitMobile</span>
+      </a>
+      <nav class="main-nav">
+        <a href="#section-mobiles" class="nav-btn"><span class="short">📱</span><span class="text">Forfaits mobiles</span></a>
+        <a href="#section-box" class="nav-btn"><span class="short">📶</span><span class="text">Box Internet</span></a>
+        <a href="#section-boxforfait" class="nav-btn"><span class="short">📦</span><span class="text">Box + Forfait</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="section-mobiles">
+      <h1>Forfaits Mobiles</h1>
+      <div id="slicer-mobiles" class="forfaits-filters"></div>
+      <div class="cards-grid" id="cards-mobiles"></div>
+    </section>
+
+    <section id="section-box">
+      <h1>Box Internet</h1>
+      <div id="slicer-box" class="forfaits-filters"></div>
+      <div class="cards-grid" id="cards-box"></div>
+    </section>
+
+    <section id="section-boxforfait">
+      <h1>Box + Forfait</h1>
+      <div id="slicer-boxforfait" class="forfaits-filters"></div>
+      <div class="cards-grid" id="cards-boxforfait"></div>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
