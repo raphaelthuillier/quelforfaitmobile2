@@ -1,47 +1,129 @@
+import { API_URL, API_TOKEN } from "./config.js";
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quel Forfait Mobile</title>
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body>
-  <header class="site-header">
-    <div class="header-box">
-      <a href="#" class="header-logo">
-        <img src="https://i.imgur.com/JT29hK7.png" class="logo-img" alt="QuelForfaitMobile" />
-        <span class="logo-text">QuelForfaitMobile</span>
-      </a>
-      <nav class="main-nav">
-        <a href="#section-mobiles" class="nav-btn"><span class="short">📱</span><span class="text">Forfaits mobiles</span></a>
-        <a href="#section-box" class="nav-btn"><span class="short">📶</span><span class="text">Box Internet</span></a>
-        <a href="#section-boxforfait" class="nav-btn"><span class="short">📦</span><span class="text">Box + Forfait</span></a>
-      </nav>
-    </div>
-  </header>
+document.addEventListener("DOMContentLoaded", async () => {
+  const sections = [
+    { id: "mobiles", type: "Forfait" },
+    { id: "box", type: "Box" },
+    { id: "boxforfait", type: "Box + Forfait" },
+  ];
 
-  <main class="container">
-    <section id="section-mobiles">
-      <h1>Forfaits Mobiles</h1>
-      <div id="slicer-mobiles" class="forfaits-filters"></div>
-      <div class="cards-grid" id="cards-mobiles"></div>
-    </section>
+  const forfaits = await fetchData();
+  renderAllSections(forfaits, sections);
+});
 
-    <section id="section-box">
-      <h1>Box Internet</h1>
-      <div id="slicer-box" class="forfaits-filters"></div>
-      <div class="cards-grid" id="cards-box"></div>
-    </section>
+async function fetchData() {
+  const res = await fetch(API_URL, { headers: { Authorization: API_TOKEN } });
+  const data = await res.json();
+  return data.list || [];
+}
 
-    <section id="section-boxforfait">
-      <h1>Box + Forfait</h1>
-      <div id="slicer-boxforfait" class="forfaits-filters"></div>
-      <div class="cards-grid" id="cards-boxforfait"></div>
-    </section>
-  </main>
+function renderAllSections(forfaits, sections) {
+  sections.forEach(sec => {
+    const filtered = forfaits.filter(f => f.type_offre === sec.type);
+    renderCards(`#cards-${sec.id}`, filtered);
+    renderSlicer(`#slicer-${sec.id}`, filtered, `#cards-${sec.id}`);
+  });
+}
 
-  <script type="module" src="./app.js"></script>
-</body>
-</html>
+function renderCards(containerSelector, forfaits) {
+  const container = document.querySelector(containerSelector);
+  container.innerHTML = "";
+  forfaits.forEach(f => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.prix = f.prix_mois || 0;
+    card.dataset.go = f.data_go || 0;
+    card.dataset.reseau = f.reseau_op || f.reseau || "";
+
+    card.innerHTML = `
+      <div class="card-header logo-row">
+        <img src="${f.logo_favicon || f.logo || ""}" alt="${f.operateur}" class="logo big-logo">
+        <div class="head-text">
+          <h3 class="operateur-name">${f.operateur || "Opérateur inconnu"}</h3>
+          <p class="offre-soustitre">${f.offre || ""}</p>
+        </div>
+      </div>
+      <div class="main-go-price">
+        <div class="left-pack">
+          <span class="connexion-label">${f.reseau || "4G"}</span>
+          ${f.reseau === "5G" ? '<span class="badge-5g">5G</span>' : ""}
+        </div>
+        <div class="price">
+          <span class="price-main">${f.prix_mois || "-"}€</span>
+          <span class="price-period">/mois</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a href="${f.Tracking || f.url}" target="_blank" class="btn-offer">Voir l’offre</a>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function renderSlicer(slicerSelector, forfaits, cardContainerSelector) {
+  const slicer = document.querySelector(slicerSelector);
+  const cardContainer = document.querySelector(cardContainerSelector);
+
+  const operateurs = [...new Set(forfaits.map(f => f.operateur).filter(Boolean))];
+  const reseaux = [...new Set(forfaits.map(f => f.reseau_op || f.reseau).filter(Boolean))];
+
+  slicer.innerHTML = `
+    <div class="control-line">
+      <div class="slicer-title">Filtres</div>
+      <div class="control-block">
+        <label>Prix max</label>
+        <input type="range" id="prix-max" min="0" max="100" value="100" />
+        <span id="prix-value">100 €</span>
+      </div>
+      <div class="control-options" id="ops"></div>
+      <div class="control-options" id="res"></div>
+    </div>`;
+
+  const opsContainer = slicer.querySelector("#ops");
+  operateurs.forEach(op => {
+    const btn = document.createElement("button");
+    btn.className = "reseau-btn operateur-btn";
+    btn.textContent = op;
+    btn.onclick = () => {
+      btn.classList.toggle("active");
+      applyFilters();
+    };
+    opsContainer.appendChild(btn);
+  });
+
+  const resContainer = slicer.querySelector("#res");
+  reseaux.forEach(res => {
+    const btn = document.createElement("button");
+    btn.className = "reseau-btn";
+    btn.textContent = res;
+    btn.onclick = () => {
+      btn.classList.toggle("active");
+      applyFilters();
+    };
+    resContainer.appendChild(btn);
+  });
+
+  slicer.querySelector("#prix-max").addEventListener("input", e => {
+    slicer.querySelector("#prix-value").textContent = e.target.value + " €";
+    applyFilters();
+  });
+
+  function applyFilters() {
+    const prixMax = parseFloat(slicer.querySelector("#prix-max").value);
+    const activeOps = [...opsContainer.querySelectorAll(".active")].map(b => b.textContent.trim());
+    const activeRes = [...resContainer.querySelectorAll(".active")].map(b => b.textContent.trim());
+
+    cardContainer.querySelectorAll(".card").forEach(card => {
+      const prix = parseFloat(card.dataset.prix) || 0;
+      const opName = card.querySelector(".operateur-name")?.textContent.trim();
+      const reseau = card.dataset.reseau;
+      let visible = true;
+
+      if (prix > prixMax) visible = false;
+      if (activeOps.length && !activeOps.includes(opName)) visible = false;
+      if (activeRes.length && !activeRes.includes(reseau)) visible = false;
+
+      card.style.display = visible ? "" : "none";
+    });
+  }
+}
